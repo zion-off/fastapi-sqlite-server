@@ -2,17 +2,16 @@ from fastapi import FastAPI, Depends, HTTPException
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from typing import List
-import datetime
+from datetime import datetime
 from auth import generate_token
 from models import Base, User, Message
 from schemas import (
-    UserSchema,
+    RegisterRequest,
     UserResponse,
     LoginRequest,
     LoginResponse,
     MessageSchema,
     MessageRequest,
-    HistoryRequest,
     UpdateMessageRequest,
     DeleteMessageRequest,
 )
@@ -36,7 +35,7 @@ def get_db():
 
 
 @app.post("/api/users", response_model=UserResponse, tags=["Users"])
-async def register(request: UserSchema, db: Session = Depends(get_db)):
+async def register(request: RegisterRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == request.username).first()
     if user:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -56,9 +55,9 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     )
     if not user:
         raise HTTPException(status_code=400, detail="Wrong username or password")
-    token = generate_token(data={"sub": user.username})
-    token_dict[user.username] = token
-    return {"username": user.username, "token": token}
+    token = generate_token(data={"sub": user.id})
+    token_dict[user.id] = token
+    return {"user_id": user.id, "token": token}
 
 
 @app.get("/api/users", response_model=List[UserResponse], tags=["Users"])
@@ -81,16 +80,14 @@ async def send_message(request: MessageRequest, db: Session = Depends(get_db)):
 
 
 @app.get("/api/messages", response_model=List[MessageSchema], tags=["Messages"])
-async def get_messages(request: HistoryRequest, db: Session = Depends(get_db)):
-    if not request.token or token_dict.get(request.user_id) != request.token:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    skip = request.skip if request.skip is not None else 0
-    limit = request.limit if request.limit is not None else 10
+async def get_messages(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     messages = db.query(Message).offset(skip).limit(limit).all()
     return messages
 
 
-@app.patch("/api/messages/{message_id}", response_model=MessageSchema, tags=["Messages"])
+@app.patch(
+    "/api/messages/{message_id}", response_model=MessageSchema, tags=["Messages"]
+)
 async def update_message(
     request: UpdateMessageRequest, message_id: int, db: Session = Depends(get_db)
 ):
@@ -107,7 +104,9 @@ async def update_message(
     return message
 
 
-@app.delete("/api/messages/{message_id}", response_model=MessageSchema, tags=["Messages"])
+@app.delete(
+    "/api/messages/{message_id}", response_model=MessageSchema, tags=["Messages"]
+)
 async def delete_message(
     request: DeleteMessageRequest, message_id: int, db: Session = Depends(get_db)
 ):

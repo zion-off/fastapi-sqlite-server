@@ -8,6 +8,15 @@ class UserSchema(BaseModel):
     password: str
 
 
+class RegisterRequest(BaseModel):
+    name: str
+    username: str
+    password: str
+
+    class Config:
+        from_attributes = True
+
+
 class UserResponse(BaseModel):
     id: int
     name: str
@@ -23,7 +32,7 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    username: str
+    user_id: int
     token: str
 
     class Config:
@@ -36,6 +45,7 @@ class MessageSchema(BaseModel):
     created_at: str
     user_id: int
 
+
 class MessageRequest(BaseModel):
     message: str
     user_id: int
@@ -44,14 +54,6 @@ class MessageRequest(BaseModel):
     class Config:
         from_attributes = True
 
-class HistoryRequest(BaseModel):
-    skip: int
-    limit: int
-    user_id: int
-    token: str
-
-    class Config:
-        from_attributes = True
 
 class UpdateMessageRequest(BaseModel):
     user_id: int
@@ -61,6 +63,7 @@ class UpdateMessageRequest(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class DeleteMessageRequest(BaseModel):
     user_id: int
