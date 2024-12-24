@@ -153,5 +153,5 @@ async def delete_message(
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
     db.delete(message)
-    db.commit
+    db.commit()
     return message
