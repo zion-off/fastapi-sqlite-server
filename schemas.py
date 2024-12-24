@@ -55,6 +55,17 @@ class MessageRequest(BaseModel):
         from_attributes = True
 
 
+class MessageResponse(BaseModel):
+    id: int
+    message: str
+    username: str
+    user_id: int
+    created_at: str
+
+    class Config:
+        from_attributes = True
+
+
 class UpdateMessageRequest(BaseModel):
     user_id: int
     message_id: int

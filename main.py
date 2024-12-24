@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,6 +13,7 @@ from schemas import (
     LoginResponse,
     MessageSchema,
     MessageRequest,
+    MessageResponse,
     UpdateMessageRequest,
     DeleteMessageRequest,
 )
@@ -21,6 +23,14 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Message Server",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 token_dict = {}
@@ -79,10 +89,35 @@ async def send_message(request: MessageRequest, db: Session = Depends(get_db)):
     return message
 
 
-@app.get("/api/messages", response_model=List[MessageSchema], tags=["Messages"])
+@app.get("/api/messages", response_model=List[MessageResponse], tags=["Messages"])
 async def get_messages(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    messages = db.query(Message).offset(skip).limit(limit).all()
+    results = (
+        db.query(
+            Message.id,
+            Message.message,
+            Message.user_id,
+            Message.created_at,
+            User.username,
+        )
+        .join(User, User.id == Message.user_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    messages = [
+        MessageResponse(
+            id=result.id,
+            message=result.message,
+            username=result.username,
+            user_id=result.user_id,
+            created_at=result.created_at,
+        )
+        for result in results
+    ]
+
     return messages
+
 
 
 @app.patch(
