@@ -1,10 +1,8 @@
-import jwt
-
-SECRET_KEY = "clairo"
-ALGORITHM = "HS256"
-
+import secrets
+import string
 
 def generate_token(data: dict):
-    to_encode = data.copy()
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    length = 32
+    alphabet = string.ascii_letters + string.digits
+    random_string = ''.join(secrets.choice(alphabet) for _ in range(length))
+    return random_string
